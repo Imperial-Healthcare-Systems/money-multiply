@@ -1,0 +1,37 @@
+{
+  "emblem": "/images/emblem.png",
+  "fbLogo": "/images/fb_logo.jpg",
+  "props": [
+    "/images/prop-0.svg",
+    "/images/prop-1.svg",
+    "/images/prop-2.svg",
+    "/images/prop-3.svg",
+    "/images/prop-4.svg",
+    "/images/prop-5.svg"
+  ],
+  "img": {
+    "hero_balcony": "/images/hero_balcony.jpg",
+    "hero_night": "/images/hero_night.jpg",
+    "hero_twilight": "/images/hero_twilight.jpg",
+    "hero_tower": "/images/hero_tower.jpg",
+    "hero_teal": "/images/hero_teal.jpg",
+    "card_golden": "/images/card_golden.jpg",
+    "card_dusk": "/images/card_dusk.jpg",
+    "card_towers": "/images/card_towers.jpg",
+    "card_lake": "/images/card_lake.jpg",
+    "card_terrace": "/images/card_terrace.jpg",
+    "card_tower_night": "/images/card_tower_night.jpg",
+    "flow": "/images/flow.jpg",
+    "dashboard": "/images/dashboard.jpg",
+    "indiamap": "/images/indiamap.jpg",
+    "compare": "/images/compare.jpg",
+    "burj": "/images/burj.jpg"
+  },
+  "heroFrames": [
+    "/images/hero_balcony.jpg",
+    "/images/hero_twilight.jpg",
+    "/images/hero_tower.jpg",
+    "/images/hero_night.jpg",
+    "/images/hero_teal.jpg"
+  ]
+}
