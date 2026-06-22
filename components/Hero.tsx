@@ -114,7 +114,7 @@ export default function Hero() {
             </h1>
             <p className="lede">
               A curated marketplace for title-clear land banks and Grade-A developments across the
-              Greater Noida growth corridor — now investable in small, tokenised sizes from ₹10,000.
+              Greater Noida growth corridor — now investable in tokenised sizes from ₹5,00,000.
             </p>
             <div className="hero-cta">
               <a className="btn-gold" href="#marketplace">

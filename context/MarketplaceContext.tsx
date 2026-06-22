@@ -14,7 +14,7 @@ import { SEED, PHOTO_POOL, IMG } from "@/lib/data";
 import { fmt as fmtRaw, fmtPlain as fmtPlainRaw } from "@/lib/currency";
 import { readSession, writeSession, clearSession } from "@/lib/auth";
 
-const KEY = "mm_marketplace_v2";
+const KEY = "mm_marketplace_v3";
 const LEADKEY = "mm_leads_v1";
 
 type ModalState =

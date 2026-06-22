@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useMarketplace } from "@/context/MarketplaceContext";
-import { FB_LOGO, SECTION_IMAGES, PHONE_TEL, CONTACT_EMAIL } from "@/lib/data";
+import { SECTION_IMAGES, PHONE_TEL, CONTACT_EMAIL } from "@/lib/data";
+
+const FOOTER_LOGO = "/images/logo-mark.png";
 import { genericWa, genericMail } from "@/lib/links";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -74,9 +76,9 @@ export default function SiteFooter() {
           <div className="foot-cols reveal">
             <div className="foot-brandblock">
               <div className="fb-top">
-                <span className="fb-logo">
+                <span className="fb-logo" style={{ width: "auto", aspectRatio: "auto", background: "transparent", border: "none", boxShadow: "none" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={FB_LOGO} alt="Money Multiply" />
+                  <img src={FOOTER_LOGO} alt="Money Multiply — Trading & Consultant" style={{ width: "auto", height: "84px", objectFit: "contain" }} />
                 </span>
                 <span className="fbt">
                   <b>Money Multiply</b>

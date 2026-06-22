@@ -28,7 +28,7 @@ export default function WhyInvest() {
                 <path d="M3 17 9 11l4 4 8-8M21 7v5h-5" />
               </svg>
             </div>
-            <h4>Fractional, from ₹10K</h4>
+            <h4>Fractional, from ₹5,00,000</h4>
             <p>Tokenisation breaks crore-scale projects into accessible tokens, so you can build a land portfolio gradually.</p>
           </div>
           <div className="pillar">

@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useMarketplace } from "@/context/MarketplaceContext";
 import { CURRENCIES } from "@/lib/currency";
-import { EMBLEM } from "@/lib/data";
 import MobileDrawer from "./MobileDrawer";
+
+const HEADER_LOGO = "/images/MM_Icon.png";
 
 const NAV = [
   { href: "#marketplace", label: "Marketplace" },
@@ -107,7 +108,7 @@ export default function Header() {
             <a className="brand" href="#home" aria-label="Money Multiply home">
               <span className="mk">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={EMBLEM} alt="Money Multiply emblem" />
+                <img src={HEADER_LOGO} alt="Money Multiply emblem" />
               </span>
               <span className="bt">
                 <span className="b1">Money Multiply</span>

@@ -24,7 +24,7 @@ export default function HowItWorks() {
             <img src={SECTION_IMAGES.howFlow} alt="Tokenised land flow" />
             <div className="floatcard">
               <div>
-                <div className="fc-n">₹10K</div>
+                <div className="fc-n">₹5,00,000</div>
                 <div className="fc-l">Minimum entry</div>
               </div>
               <div style={{ marginLeft: "auto", textAlign: "right" }}>
