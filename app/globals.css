@@ -876,3 +876,37 @@ footer.site{position:relative;border-top:1px solid var(--line);background:linear
 .pd-alloc-key i.res{background:var(--brass)}
 .pd-alloc-key i.ava{background:rgba(255,255,255,.14)}
 @media(max-width:640px){.pd-tok-grid{grid-template-columns:1fr 1fr}}
+
+/* ============================================================
+   ASSOCIATE (Become an Associate) modal
+   ============================================================ */
+.assoc-choose{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.assoc-card{display:flex;flex-direction:column;align-items:flex-start;gap:9px;text-align:left;padding:22px 20px;border:1px solid var(--line-2);border-radius:var(--r-lg);background:rgba(255,255,255,.02);transition:.25s}
+.assoc-card:hover{border-color:var(--brass);background:rgba(198,163,90,.06);transform:translateY(-3px)}
+.assoc-card .ac-ic{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:rgba(198,163,90,.1);border:1px solid var(--line-2);margin-bottom:6px}
+.assoc-card .ac-ic svg{width:24px;height:24px;color:var(--brass-lt)}
+.assoc-card .ac-title{font-family:var(--ff-d);font-size:19px;font-weight:500;color:var(--cream)}
+.assoc-card .ac-desc{font-size:13px;color:var(--muted);line-height:1.55}
+.assoc-card .ac-go{display:inline-flex;align-items:center;gap:7px;margin-top:6px;font-family:var(--ff-m);font-size:12px;letter-spacing:.04em;color:var(--brass-lt)}
+.assoc-card .ac-go svg{transition:transform .2s}
+.assoc-card:hover .ac-go svg{transform:translateX(4px)}
+.assoc-back{width:36px;height:36px;border-radius:10px;border:1px solid var(--line-2);display:flex;align-items:center;justify-content:center;color:var(--champ);transition:.2s;flex-shrink:0;background:none}
+.assoc-back:hover{background:rgba(198,163,90,.1);color:#fff}
+.assoc-success{text-align:center;padding:14px 4px 4px}
+.assoc-success .as-check{width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;background:rgba(95,185,138,.1);border:1px solid rgba(95,185,138,.35)}
+.assoc-success .as-check svg{width:30px;height:30px;color:var(--ok)}
+.assoc-success h3{font-family:var(--ff-d);font-size:23px;font-weight:500;margin-bottom:12px}
+.assoc-success p{font-size:14px;color:var(--muted);line-height:1.65;max-width:42ch;margin:0 auto 22px}
+@media(max-width:520px){.assoc-choose{grid-template-columns:1fr}}
+
+/* leads: partner/investor colors + flexible KPI grid */
+.lead-kpis{grid-template-columns:repeat(auto-fit,minmax(84px,1fr))}
+.lead-ic.partner{color:#e3cf9b;background:rgba(198,163,90,.1)}
+.lead-ic.investor{color:#9ad6b3;background:rgba(95,185,138,.08)}
+.lead-src.partner{color:#e3cf9b;background:rgba(198,163,90,.12)}
+.lead-src.investor{color:#9ad6b3;background:rgba(95,185,138,.1)}
+
+/* wider header to fit the nav + CTAs comfortably */
+header.site .wrap{max-width:1380px}
+.links a{white-space:nowrap}
+.nav-in{gap:24px}

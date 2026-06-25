@@ -5,6 +5,7 @@ import SiteFooter from "@/components/SiteFooter";
 import Fab from "@/components/Fab";
 import InvestModal from "@/components/InvestModal";
 import AdminModal from "@/components/AdminModal";
+import AssociateModal from "@/components/AssociateModal";
 import Toast from "@/components/Toast";
 import Effects from "@/components/Effects";
 import ProductDetail from "@/components/property/ProductDetail";
@@ -43,6 +44,7 @@ export default async function PropertyPage({
       <Fab />
       <InvestModal />
       <AdminModal />
+      <AssociateModal />
       <Toast />
       <Effects />
     </>

@@ -19,7 +19,8 @@ const LEADKEY = "mm_leads_v1";
 type ModalState =
   | { type: "none" }
   | { type: "invest"; listingId: string }
-  | { type: "admin" };
+  | { type: "admin" }
+  | { type: "associate" };
 
 interface MarketplaceCtx {
   // currency
@@ -45,6 +46,7 @@ interface MarketplaceCtx {
   modal: ModalState;
   openInvest: (id: string) => void;
   openAdmin: () => void;
+  openAssociate: () => void;
   closeModal: () => void;
   // toast
   toast: (msg: string) => void;
@@ -186,6 +188,7 @@ export function MarketplaceProvider({ children }: { children: React.ReactNode })
   /* ---- modals ---- */
   const openInvest = useCallback((id: string) => setModal({ type: "invest", listingId: id }), []);
   const openAdmin = useCallback(() => setModal({ type: "admin" }), []);
+  const openAssociate = useCallback(() => setModal({ type: "associate" }), []);
   const closeModal = useCallback(() => setModal({ type: "none" }), []);
 
   /* ---- lock body scroll while a modal is open ---- */
@@ -216,6 +219,7 @@ export function MarketplaceProvider({ children }: { children: React.ReactNode })
       modal,
       openInvest,
       openAdmin,
+      openAssociate,
       closeModal,
       toast,
       toastMsg,
@@ -239,6 +243,7 @@ export function MarketplaceProvider({ children }: { children: React.ReactNode })
       modal,
       openInvest,
       openAdmin,
+      openAssociate,
       closeModal,
       toast,
       toastMsg,

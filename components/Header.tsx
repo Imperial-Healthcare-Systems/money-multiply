@@ -48,7 +48,7 @@ const CurrencyFlag = ({ code }: { code: string }) => {
 };
 
 export default function Header() {
-  const { currency, setCurrency, openAdmin } = useMarketplace();
+  const { currency, setCurrency, openAdmin, openAssociate } = useMarketplace();
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [active, setActive] = useState("marketplace");
@@ -123,6 +123,9 @@ export default function Header() {
               ))}
             </nav>
             <div className="nav-right">
+              <button className="btn-ghost" onClick={openAssociate}>
+                Become an Associate
+              </button>
               <button className="btn-ghost" onClick={openAdmin}>
                 Admin
               </button>
@@ -151,6 +154,10 @@ export default function Header() {
         onAdmin={() => {
           setDrawerOpen(false);
           openAdmin();
+        }}
+        onAssociate={() => {
+          setDrawerOpen(false);
+          openAssociate();
         }}
       />
     </>

@@ -14,6 +14,8 @@ const SRC_LABEL: Record<LeadSource, string> = {
   news: "Newsletter",
   wa: "WhatsApp",
   email: "Email",
+  partner: "Partner",
+  investor: "Investor",
 };
 
 function AnimatedNumber({ to, format }: { to: number; format: (n: number) => string }) {
@@ -340,11 +342,21 @@ function Leads({
   const byNews = leads.filter((l) => l.source === "news").length;
   const byWA = leads.filter((l) => l.source === "wa").length;
   const byEmail = leads.filter((l) => l.source === "email").length;
+  const byPartner = leads.filter((l) => l.source === "partner").length;
+  const byInvestor = leads.filter((l) => l.source === "investor").length;
   const shown = leads.filter((l) => leadFilter === "all" || l.source === leadFilter);
 
   return (
     <>
       <div className="lead-kpis">
+        <div className="lead-kpi">
+          <div className="lkn">{byPartner}</div>
+          <div className="lkl">Partners</div>
+        </div>
+        <div className="lead-kpi">
+          <div className="lkn">{byInvestor}</div>
+          <div className="lkl">Investors</div>
+        </div>
         <div className="lead-kpi">
           <div className="lkn">{byNews}</div>
           <div className="lkl">Newsletter</div>
@@ -378,6 +390,12 @@ function Leads({
       <div className="lead-filter">
         <button className={leadFilter === "all" ? "on" : ""} onClick={() => setLeadFilter("all")}>
           All ({leads.length})
+        </button>
+        <button className={leadFilter === "partner" ? "on" : ""} onClick={() => setLeadFilter("partner")}>
+          Partners ({byPartner})
+        </button>
+        <button className={leadFilter === "investor" ? "on" : ""} onClick={() => setLeadFilter("investor")}>
+          Investors ({byInvestor})
         </button>
         <button className={leadFilter === "news" ? "on" : ""} onClick={() => setLeadFilter("news")}>
           Newsletter ({byNews})

@@ -1,6 +1,6 @@
 export type Currency = "INR" | "USD" | "AED";
 
-export type LeadSource = "news" | "wa" | "email";
+export type LeadSource = "news" | "wa" | "email" | "partner" | "investor";
 
 export interface Listing {
   id: string;
