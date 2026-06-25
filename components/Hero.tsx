@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useMarketplace } from "@/context/MarketplaceContext";
 import { HERO_FRAMES } from "@/lib/data";
 import { fundedPct } from "@/lib/utils";
@@ -17,7 +18,7 @@ interface Firefly {
 }
 
 export default function Hero() {
-  const { listings, fmt, fmtPlain, openInvest } = useMarketplace();
+  const { listings, fmt, fmtPlain } = useMarketplace();
   const [frame, setFrame] = useState(0);
   const [fireflies, setFireflies] = useState<Firefly[]>([]);
   const bgRef = useRef<HTMLDivElement>(null);
@@ -180,13 +181,13 @@ export default function Hero() {
                     </div>
                   </div>
                 </div>
-                <button
+                <Link
                   className="btn-gold"
+                  href={`/property/${featured.id}`}
                   style={{ width: "100%", justifyContent: "center", marginTop: "18px", padding: "13px" }}
-                  onClick={() => openInvest(featured.id)}
                 >
                   Invest from {fmtPlain(featured.token)}
-                </button>
+                </Link>
               </>
             )}
           </aside>

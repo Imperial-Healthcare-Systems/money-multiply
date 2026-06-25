@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMarketplace } from "@/context/MarketplaceContext";
 import { imgFor, fundedPct } from "@/lib/utils";
 import { waEnquire } from "@/lib/links";
@@ -13,14 +14,18 @@ export default function ListingCard({ l }: { l: Listing }) {
   return (
     <article className="card reveal in tilt" data-tilt>
       <span className="sheen" />
-      <div className="card-img">
+      <Link href={`/property/${l.id}`} className="card-img" aria-label={l.title} style={{ display: "block" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={imgFor(l)} alt={l.title} loading="lazy" />
         <span className="card-tag">{l.tag || "Live"}</span>
         <span className="card-cat">{l.cat}</span>
-      </div>
+      </Link>
       <div className="card-body">
-        <h3>{l.title}</h3>
+        <h3>
+          <Link href={`/property/${l.id}`} style={{ color: "inherit" }}>
+            {l.title}
+          </Link>
+        </h3>
         <div className="loc">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z" />

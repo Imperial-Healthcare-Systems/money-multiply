@@ -41,10 +41,9 @@ public/images/  extracted, deduped image assets
 
 These pre-existing concerns were intentionally left as-is during the port:
 
-1. **Admin auth is client-side only.** Passcode (`MM@2026`) lives in source
-   (`lib/data.ts`); the OTP reset runs in offline-preview mode and shows the code
-   on screen. `lib/auth.ts` is backend-ready: set `AUTH_API.base` to a real
-   origin to go live. Move auth server-side before any real deployment.
+1. ~~Admin auth is client-side only.~~ **Resolved** — admin auth is now
+   server-side (Supabase + bcrypt + signed httpOnly session cookie). See
+   [`ADMIN_SETUP.md`](ADMIN_SETUP.md). Listings/leads still use `localStorage`.
 2. **Financial/legal copy** (IRR figures, "₹4,200 Cr+", investor counts) are
    placeholder marketing numbers; footer Legal/Risk links are stubs (`#`).
 3. **Enquiry email** routes to a personal Gmail (`lib/data.ts → EMAIL`) while the

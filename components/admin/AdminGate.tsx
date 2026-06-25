@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import { useMarketplace } from "@/context/MarketplaceContext";
-import { getAdminPass } from "@/lib/auth";
 
-export default function AdminGate({ onForgot }: { onForgot: () => void }) {
-  const { login, toast } = useMarketplace();
+export default function AdminGate() {
+  const { login, toast, closeModal } = useMarketplace();
   const [pass, setPass] = useState("");
   const [show, setShow] = useState(false);
   const [remember, setRemember] = useState(false);
@@ -13,19 +12,31 @@ export default function AdminGate({ onForgot }: { onForgot: () => void }) {
   const [shake, setShake] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const attempt = () => {
+  const fail = (msg: string) => {
+    setErr(msg);
+    setShake(false);
+    requestAnimationFrame(() => setShake(true));
+  };
+
+  const attempt = async () => {
+    if (loading) return;
     setErr("");
-    if (pass !== getAdminPass()) {
-      setErr("Incorrect passcode. Please try again.");
-      setShake(false);
-      requestAnimationFrame(() => setShake(true));
+    if (!pass) {
+      fail("Enter your admin passcode.");
       return;
     }
     setLoading(true);
-    setTimeout(() => {
-      login(remember);
+    const res = await login(pass, remember);
+    setLoading(false);
+    if (res.ok) {
       toast("Welcome back, admin");
-    }, 620);
+      return;
+    }
+    if (res.error === "invalid") fail("Incorrect passcode. Please try again.");
+    else if (res.error === "unconfigured") fail("Admin backend isn’t configured yet. See .env.local setup.");
+    else if (res.error === "network") fail("Network error. Please try again.");
+    else fail("Couldn’t sign in. Please try again.");
+    setPass("");
   };
 
   return (
@@ -35,7 +46,9 @@ export default function AdminGate({ onForgot }: { onForgot: () => void }) {
           <h3>Admin access</h3>
           <div className="sub">Secure marketplace console</div>
         </div>
-        <CloseBtn />
+        <button className="mclose" onClick={closeModal}>
+          ×
+        </button>
       </div>
       <div className="mbody">
         <div className={"gate" + (shake ? " shake" : "")} onAnimationEnd={() => setShake(false)}>
@@ -61,7 +74,7 @@ export default function AdminGate({ onForgot }: { onForgot: () => void }) {
               <input
                 type={show ? "text" : "password"}
                 placeholder="••••••••••"
-                autoComplete="off"
+                autoComplete="current-password"
                 autoFocus
                 value={pass}
                 onChange={(e) => {
@@ -102,27 +115,15 @@ export default function AdminGate({ onForgot }: { onForgot: () => void }) {
           <button className={"btn-gold gate-btn" + (loading ? " loading" : "")} onClick={attempt}>
             Unlock console
           </button>
-          <button className="gate-forgot" type="button" onClick={onForgot}>
-            Forgot passcode?
-          </button>
           <div className="gate-foot">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z" />
               <path d="m9 12 2 2 4-4" />
             </svg>
-            Demo console · client-side passcode
+            Encrypted server session · passcode never stored in the browser
           </div>
         </div>
       </div>
     </>
-  );
-}
-
-function CloseBtn() {
-  const { closeModal } = useMarketplace();
-  return (
-    <button className="mclose" onClick={closeModal}>
-      ×
-    </button>
   );
 }

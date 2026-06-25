@@ -38,9 +38,11 @@ function AnimatedNumber({ to, format }: { to: number; format: (n: number) => str
 export default function AdminConsole({
   onToggleMax,
   onMinimize,
+  onChangePasscode,
 }: {
   onToggleMax: () => void;
   onMinimize: () => void;
+  onChangePasscode: () => void;
 }) {
   const { listings, leads, currency, fmt, fmtPlain, logout, deleteListing, clearLeads, toast } =
     useMarketplace();
@@ -156,9 +158,14 @@ export default function AdminConsole({
           )}
         </div>
 
-        <button className="btn-ghost" style={{ width: "100%", marginTop: "18px" }} onClick={logout}>
-          Sign out of console
-        </button>
+        <div style={{ display: "flex", gap: "10px", marginTop: "18px", flexWrap: "wrap" }}>
+          <button className="btn-ghost" style={{ flex: 1, justifyContent: "center", minWidth: "150px" }} onClick={onChangePasscode}>
+            Change passcode
+          </button>
+          <button className="btn-ghost" style={{ flex: 1, justifyContent: "center", minWidth: "150px" }} onClick={() => logout()}>
+            Sign out of console
+          </button>
+        </div>
       </div>
     </>
   );

@@ -12,9 +12,8 @@ import React, {
 import type { Currency, Lead, LeadSource, Listing } from "@/lib/types";
 import { SEED, PHOTO_POOL, IMG } from "@/lib/data";
 import { fmt as fmtRaw, fmtPlain as fmtPlainRaw } from "@/lib/currency";
-import { readSession, writeSession, clearSession } from "@/lib/auth";
 
-const KEY = "mm_marketplace_v3";
+const KEY = "mm_marketplace_v4";
 const LEADKEY = "mm_leads_v1";
 
 type ModalState =
@@ -40,8 +39,8 @@ interface MarketplaceCtx {
   // admin
   isAdmin: boolean;
   setIsAdmin: (v: boolean) => void;
-  login: (remember: boolean) => void;
-  logout: () => void;
+  login: (passcode: string, remember: boolean) => Promise<{ ok: boolean; error?: string }>;
+  logout: () => Promise<void>;
   // modals
   modal: ModalState;
   openInvest: (id: string) => void;
@@ -84,7 +83,13 @@ export function MarketplaceProvider({ children }: { children: React.ReactNode })
         if (Array.isArray(parsed)) setLeads(parsed as Lead[]);
       }
     } catch {}
-    if (readSession()) setIsAdmin(true);
+    // verify admin session against the server
+    fetch("/api/admin/session")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.authenticated) setIsAdmin(true);
+      })
+      .catch(() => {});
     setReady(true);
   }, []);
 
@@ -152,15 +157,30 @@ export function MarketplaceProvider({ children }: { children: React.ReactNode })
 
   const clearLeads = useCallback(() => setLeads([]), []);
 
-  /* ---- admin ---- */
-  const login = useCallback((remember: boolean) => {
-    setIsAdmin(true);
-    if (remember) writeSession(7);
+  /* ---- admin (server-backed) ---- */
+  const login = useCallback(async (passcode: string, remember: boolean) => {
+    try {
+      const r = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ passcode, remember }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.ok) {
+        setIsAdmin(true);
+        return { ok: true };
+      }
+      return { ok: false, error: d.error || "server" };
+    } catch {
+      return { ok: false, error: "network" };
+    }
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await fetch("/api/admin/logout", { method: "POST" });
+    } catch {}
     setIsAdmin(false);
-    clearSession();
   }, []);
 
   /* ---- modals ---- */
