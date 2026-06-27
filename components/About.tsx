@@ -104,7 +104,10 @@ export default function About() {
           <h2 style={{ fontSize: "clamp(26px,3.6vw,42px)" }}>The people behind the platform</h2>
         </div>
         <div className="lead-card reveal scale">
-          <div className="lead-avatar">AM</div>
+          <div className="lead-avatar">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/ashutosh.jpg" alt="Ashutosh Kumar Mishra" />
+          </div>
           <div className="lead-info">
             <h3>Ashutosh Kumar Mishra</h3>
             <div className="role">Founder · Real Estate &amp; Investment Consultant</div>
