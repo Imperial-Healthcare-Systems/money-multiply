@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { MarketplaceProvider } from "@/context/MarketplaceContext";
+import { getListings } from "@/lib/listings-server";
+import { SEED } from "@/lib/data";
+import type { Listing } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Money Multiply — The Land Bankers & Traders | Tokenised Land Marketplace",
@@ -16,7 +19,16 @@ export const viewport: Viewport = {
   themeColor: "#0a0f0c",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Server-render listings from Supabase; fall back to bundled seed if the
+  // backend isn't reachable yet (e.g. schema not created).
+  let initialListings: Listing[] = SEED;
+  try {
+    initialListings = await getListings();
+  } catch {
+    initialListings = SEED;
+  }
+
   return (
     <html lang="en">
       <head>
@@ -28,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        <MarketplaceProvider>{children}</MarketplaceProvider>
+        <MarketplaceProvider initialListings={initialListings}>{children}</MarketplaceProvider>
       </body>
     </html>
   );

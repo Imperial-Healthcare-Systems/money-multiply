@@ -24,25 +24,38 @@ export default function AdminForm({ editing, onDone }: { editing: Listing | null
     motif: l && typeof l.img === "number" ? String(l.img) : "0",
   });
   const [formImg, setFormImg] = useState<string | null>(l?.customImg || null);
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setF((prev) => ({ ...prev, [k]: e.target.value }));
 
   const num = (s: string) => parseFloat(s) || 0;
 
-  const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 3.5 * 1024 * 1024) {
-      toast("Image too large (max 3.5MB)");
+    if (file.size > 6 * 1024 * 1024) {
+      toast("Image too large (max 6MB)");
       return;
     }
-    const r = new FileReader();
-    r.onload = () => setFormImg(r.result as string);
-    r.readAsDataURL(file);
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok && d.ok) setFormImg(d.url as string);
+      else toast(d.error === "unauthorized" ? "Session expired — sign in again" : "Upload failed");
+    } catch {
+      toast("Upload failed");
+    } finally {
+      setUploading(false);
+    }
   };
 
-  const save = () => {
+  const save = async () => {
+    if (saving) return;
     const title = f.title.trim();
     if (!title) {
       toast("Please add a title");
@@ -79,9 +92,15 @@ export default function AdminForm({ editing, onDone }: { editing: Listing | null
     if (formImg) obj.customImg = formImg;
     else if (l?.photo) obj.photo = l.photo;
     else if (l?.customImg) obj.customImg = l.customImg;
-    saveListing(obj);
-    toast(l ? "Listing updated" : "Listing published");
-    onDone();
+    setSaving(true);
+    const r = await saveListing(obj);
+    setSaving(false);
+    if (r.ok) {
+      toast(l ? "Listing updated" : "Listing published");
+      onDone();
+    } else {
+      toast(r.error === "unauthorized" ? "Session expired — sign in again" : "Couldn’t save listing");
+    }
   };
 
   const preview = formImg || (l && typeof l.img === "number" ? PROPS[l.img] : null);
@@ -165,7 +184,7 @@ export default function AdminForm({ editing, onDone }: { editing: Listing | null
         <div className="field">
           <label>Upload custom image (optional)</label>
           <label className="imgdrop" htmlFor="f_file">
-            Tap to upload a photo
+            {uploading ? "Uploading…" : "Tap to upload a photo"}
             <div id="imgPrev">
               {preview && (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -173,9 +192,9 @@ export default function AdminForm({ editing, onDone }: { editing: Listing | null
               )}
             </div>
           </label>
-          <input type="file" id="f_file" accept="image/*" hidden onChange={onFile} />
+          <input type="file" id="f_file" accept="image/*" hidden onChange={onFile} disabled={uploading} />
         </div>
-        <button className="btn-gold" onClick={save}>
+        <button className={"btn-gold" + (saving ? " loading" : "")} onClick={save} disabled={saving || uploading}>
           {l ? "Save changes" : "Publish listing"}
         </button>
         <button className="btn-ghost" style={{ width: "100%", marginTop: "12px" }} onClick={onDone}>

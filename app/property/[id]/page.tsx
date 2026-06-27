@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SEED } from "@/lib/data";
+import { getListings, getListing } from "@/lib/listings-server";
 import Header from "@/components/Header";
 import SiteFooter from "@/components/SiteFooter";
 import Fab from "@/components/Fab";
@@ -10,8 +11,13 @@ import Toast from "@/components/Toast";
 import Effects from "@/components/Effects";
 import ProductDetail from "@/components/property/ProductDetail";
 
-export function generateStaticParams() {
-  return SEED.map((l) => ({ id: l.id }));
+export async function generateStaticParams() {
+  try {
+    const listings = await getListings();
+    return listings.map((l) => ({ id: l.id }));
+  } catch {
+    return SEED.map((l) => ({ id: l.id }));
+  }
 }
 
 export async function generateMetadata({
@@ -20,7 +26,10 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const l = SEED.find((x) => x.id === id);
+  let l = SEED.find((x) => x.id === id) || null;
+  try {
+    l = (await getListing(id)) || l;
+  } catch {}
   if (!l) return { title: "Opportunity — Money Multiply" };
   return {
     title: `${l.title} — Money Multiply`,

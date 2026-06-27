@@ -32,6 +32,33 @@ export interface Lead {
   ts: number;
 }
 
+export type UserRole = "partner" | "investor";
+
+export interface AppUser {
+  id: string;
+  role: UserRole;
+  name: string;
+  email: string;
+  phone: string;
+  referralCode: string;
+  referredBy: string;
+  commission: number;
+  status: string;
+  saved: string[];
+  createdAt?: string;
+}
+
+export interface Holding {
+  id: string;
+  userId: string;
+  listingId: string;
+  title: string;
+  tokens: number;
+  amount: number;
+  status: string;
+  createdAt?: string;
+}
+
 export interface ImagesManifest {
   emblem: string;
   fbLogo: string;

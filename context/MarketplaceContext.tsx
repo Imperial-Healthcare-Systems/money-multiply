@@ -9,12 +9,9 @@ import React, {
   useRef,
   useState,
 } from "react";
-import type { Currency, Lead, LeadSource, Listing } from "@/lib/types";
+import type { AppUser, Currency, Lead, LeadSource, Listing } from "@/lib/types";
 import { SEED, PHOTO_POOL, IMG } from "@/lib/data";
 import { fmt as fmtRaw, fmtPlain as fmtPlainRaw } from "@/lib/currency";
-
-const KEY = "mm_marketplace_v13";
-const LEADKEY = "mm_leads_v1";
 
 type ModalState =
   | { type: "none" }
@@ -23,25 +20,39 @@ type ModalState =
   | { type: "associate" };
 
 interface MarketplaceCtx {
-  // currency
   currency: Currency;
   setCurrency: (c: Currency) => void;
   fmt: (inr: number) => string;
   fmtPlain: (inr: number) => string;
-  // listings
+  // listings (server-backed)
   listings: Listing[];
   getListing: (id: string) => Listing | undefined;
-  saveListing: (l: Listing) => void;
-  deleteListing: (id: string) => void;
-  // leads
+  saveListing: (l: Listing) => Promise<{ ok: boolean; error?: string }>;
+  deleteListing: (id: string) => Promise<{ ok: boolean }>;
+  // leads (server-backed)
   leads: Lead[];
   captureLead: (source: LeadSource, contact: string, detail?: string) => void;
-  clearLeads: () => void;
+  clearLeads: () => Promise<void>;
   // admin
   isAdmin: boolean;
   setIsAdmin: (v: boolean) => void;
   login: (passcode: string, remember: boolean) => Promise<{ ok: boolean; error?: string }>;
   logout: () => Promise<void>;
+  // partner / investor accounts
+  currentUser: AppUser | null;
+  userReady: boolean;
+  registerUser: (input: {
+    role: "partner" | "investor";
+    name: string;
+    email: string;
+    phone: string;
+    password: string;
+    referredBy?: string;
+  }) => Promise<{ ok: boolean; error?: string }>;
+  userLogin: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  userLogout: () => Promise<void>;
+  toggleSave: (listingId: string) => Promise<void>;
+  isSaved: (listingId: string) => boolean;
   // modals
   modal: ModalState;
   openInvest: (id: string) => void;
@@ -52,63 +63,66 @@ interface MarketplaceCtx {
   toast: (msg: string) => void;
   toastMsg: string;
   toastShown: boolean;
-  // hydration flag (client storage loaded)
   ready: boolean;
 }
 
 const Ctx = createContext<MarketplaceCtx | null>(null);
 
-export function MarketplaceProvider({ children }: { children: React.ReactNode }) {
+export function MarketplaceProvider({
+  children,
+  initialListings,
+}: {
+  children: React.ReactNode;
+  initialListings?: Listing[];
+}) {
   const [currency, setCurrency] = useState<Currency>("INR");
-  const [listings, setListings] = useState<Listing[]>(SEED);
+  const [listings, setListings] = useState<Listing[]>(
+    initialListings?.length ? initialListings : SEED
+  );
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [modal, setModal] = useState<ModalState>({ type: "none" });
   const [toastMsg, setToastMsg] = useState("Saved");
   const [toastShown, setToastShown] = useState(false);
-  const [ready, setReady] = useState(false);
+  const [ready] = useState(true);
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
+  const [userReady, setUserReady] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /* ---- hydrate from localStorage after mount ---- */
+  /* ---- verify admin session on mount ---- */
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed?.listings?.length) setListings(parsed.listings as Listing[]);
-      }
-    } catch {}
-    try {
-      const lr = localStorage.getItem(LEADKEY);
-      if (lr) {
-        const parsed = JSON.parse(lr);
-        if (Array.isArray(parsed)) setLeads(parsed as Lead[]);
-      }
-    } catch {}
-    // verify admin session against the server
     fetch("/api/admin/session")
       .then((r) => r.json())
       .then((d) => {
         if (d?.authenticated) setIsAdmin(true);
       })
       .catch(() => {});
-    setReady(true);
   }, []);
 
-  /* ---- persist listings + leads ---- */
+  /* ---- load partner/investor session on mount ---- */
   useEffect(() => {
-    if (!ready) return;
-    try {
-      localStorage.setItem(KEY, JSON.stringify({ listings }));
-    } catch {}
-  }, [listings, ready]);
+    fetch("/api/user/me")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.user) setCurrentUser(d.user as AppUser);
+      })
+      .catch(() => {})
+      .finally(() => setUserReady(true));
+  }, []);
 
+  /* ---- load leads from the server whenever admin is authenticated ---- */
   useEffect(() => {
-    if (!ready) return;
-    try {
-      localStorage.setItem(LEADKEY, JSON.stringify(leads));
-    } catch {}
-  }, [leads, ready]);
+    if (!isAdmin) {
+      setLeads([]);
+      return;
+    }
+    fetch("/api/admin/leads")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.ok && Array.isArray(d.leads)) setLeads(d.leads as Lead[]);
+      })
+      .catch(() => {});
+  }, [isAdmin]);
 
   /* ---- formatting bound to currency ---- */
   const fmt = useCallback((inr: number) => fmtRaw(inr, currency), [currency]);
@@ -122,42 +136,78 @@ export function MarketplaceProvider({ children }: { children: React.ReactNode })
     toastTimer.current = setTimeout(() => setToastShown(false), 2600);
   }, []);
 
-  /* ---- listings CRUD ---- */
+  /* ---- listings ---- */
   const getListing = useCallback((id: string) => listings.find((l) => l.id === id), [listings]);
 
   const saveListing = useCallback(
-    (obj: Listing) => {
-      setListings((prev) => {
-        const exists = prev.some((x) => x.id === obj.id);
-        if (exists) return prev.map((x) => (x.id === obj.id ? obj : x));
-        // assign a default photo for brand-new listings without a custom image
-        if (!obj.customImg && !obj.photo) {
-          const key = PHOTO_POOL[prev.length % PHOTO_POOL.length];
-          if (IMG[key]) obj = { ...obj, photo: IMG[key] };
+    async (input: Listing): Promise<{ ok: boolean; error?: string }> => {
+      const exists = listings.some((x) => x.id === input.id);
+      let obj = input;
+      if (!exists && !obj.customImg && !obj.photo) {
+        const key = PHOTO_POOL[listings.length % PHOTO_POOL.length];
+        if (IMG[key]) obj = { ...obj, photo: IMG[key] };
+      }
+      try {
+        const res = await fetch(
+          exists ? `/api/admin/listings/${obj.id}` : `/api/admin/listings`,
+          {
+            method: exists ? "PUT" : "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(obj),
+          }
+        );
+        const d = await res.json().catch(() => ({}));
+        if (res.ok && d.ok) {
+          const saved: Listing = d.listing || obj;
+          setListings((prev) =>
+            exists ? prev.map((x) => (x.id === saved.id ? saved : x)) : [saved, ...prev]
+          );
+          return { ok: true };
         }
-        return [obj, ...prev];
-      });
+        return { ok: false, error: d.error || "server" };
+      } catch {
+        return { ok: false, error: "network" };
+      }
     },
-    []
+    [listings]
   );
 
-  const deleteListing = useCallback((id: string) => {
-    setListings((prev) => prev.filter((x) => x.id !== id));
+  const deleteListing = useCallback(async (id: string): Promise<{ ok: boolean }> => {
+    try {
+      const res = await fetch(`/api/admin/listings/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setListings((prev) => prev.filter((x) => x.id !== id));
+        return { ok: true };
+      }
+      return { ok: false };
+    } catch {
+      return { ok: false };
+    }
   }, []);
 
   /* ---- leads ---- */
   const captureLead = useCallback((source: LeadSource, contact: string, detail?: string) => {
-    const lead: Lead = {
+    const optimistic: Lead = {
       id: "ld-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
       source,
       contact: contact || "",
       detail: detail || "",
       ts: Date.now(),
     };
-    setLeads((prev) => [lead, ...prev].slice(0, 500));
+    setLeads((prev) => [optimistic, ...prev].slice(0, 1000));
+    fetch("/api/leads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ source, contact, detail }),
+    }).catch(() => {});
   }, []);
 
-  const clearLeads = useCallback(() => setLeads([]), []);
+  const clearLeads = useCallback(async () => {
+    try {
+      await fetch("/api/admin/leads", { method: "DELETE" });
+    } catch {}
+    setLeads([]);
+  }, []);
 
   /* ---- admin (server-backed) ---- */
   const login = useCallback(async (passcode: string, remember: boolean) => {
@@ -185,13 +235,85 @@ export function MarketplaceProvider({ children }: { children: React.ReactNode })
     setIsAdmin(false);
   }, []);
 
+  /* ---- partner / investor accounts ---- */
+  const registerUser = useCallback(
+    async (input: {
+      role: "partner" | "investor";
+      name: string;
+      email: string;
+      phone: string;
+      password: string;
+      referredBy?: string;
+    }) => {
+      try {
+        const r = await fetch("/api/user/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(input),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (r.ok && d.ok) {
+          setCurrentUser(d.user as AppUser);
+          return { ok: true };
+        }
+        return { ok: false, error: d.error || "server" };
+      } catch {
+        return { ok: false, error: "network" };
+      }
+    },
+    []
+  );
+
+  const userLogin = useCallback(async (email: string, password: string) => {
+    try {
+      const r = await fetch("/api/user/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.ok) {
+        setCurrentUser(d.user as AppUser);
+        return { ok: true };
+      }
+      return { ok: false, error: d.error || "server" };
+    } catch {
+      return { ok: false, error: "network" };
+    }
+  }, []);
+
+  const userLogout = useCallback(async () => {
+    try {
+      await fetch("/api/user/logout", { method: "POST" });
+    } catch {}
+    setCurrentUser(null);
+  }, []);
+
+  const toggleSave = useCallback(async (listingId: string) => {
+    try {
+      const r = await fetch("/api/user/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listingId }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.ok && Array.isArray(d.saved)) {
+        setCurrentUser((u) => (u ? { ...u, saved: d.saved as string[] } : u));
+      }
+    } catch {}
+  }, []);
+
+  const isSaved = useCallback(
+    (listingId: string) => !!currentUser?.saved?.includes(listingId),
+    [currentUser]
+  );
+
   /* ---- modals ---- */
   const openInvest = useCallback((id: string) => setModal({ type: "invest", listingId: id }), []);
   const openAdmin = useCallback(() => setModal({ type: "admin" }), []);
   const openAssociate = useCallback(() => setModal({ type: "associate" }), []);
   const closeModal = useCallback(() => setModal({ type: "none" }), []);
 
-  /* ---- lock body scroll while a modal is open ---- */
   useEffect(() => {
     document.body.style.overflow = modal.type === "none" ? "" : "hidden";
     return () => {
@@ -216,6 +338,13 @@ export function MarketplaceProvider({ children }: { children: React.ReactNode })
       setIsAdmin,
       login,
       logout,
+      currentUser,
+      userReady,
+      registerUser,
+      userLogin,
+      userLogout,
+      toggleSave,
+      isSaved,
       modal,
       openInvest,
       openAdmin,
@@ -240,6 +369,13 @@ export function MarketplaceProvider({ children }: { children: React.ReactNode })
       isAdmin,
       login,
       logout,
+      currentUser,
+      userReady,
+      registerUser,
+      userLogin,
+      userLogout,
+      toggleSave,
+      isSaved,
       modal,
       openInvest,
       openAdmin,

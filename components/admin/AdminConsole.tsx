@@ -6,6 +6,7 @@ import { aggregate, imgFor, leadsToday, timeAgo, exportLeadsCSV, fundedPct } fro
 import { fmt as fmtRaw } from "@/lib/currency";
 import { DonutSVG, Sparkline } from "./charts";
 import AdminForm from "./AdminForm";
+import AdminUsers from "./AdminUsers";
 import type { Lead, LeadSource, Listing } from "@/lib/types";
 
 const COLORS = ["#c6a35a", "#3a6b4f", "#d8b96a", "#5fb98a", "#8a6d2f", "#b08d44"];
@@ -48,7 +49,7 @@ export default function AdminConsole({
 }) {
   const { listings, leads, currency, fmt, fmtPlain, logout, deleteListing, clearLeads, toast } =
     useMarketplace();
-  const [tab, setTab] = useState<"dash" | "leads" | "list">("dash");
+  const [tab, setTab] = useState<"dash" | "leads" | "list" | "users">("dash");
   const [editing, setEditing] = useState<Listing | null | undefined>(undefined); // undefined = no form
   const [leadFilter, setLeadFilter] = useState<"all" | LeadSource>("all");
 
@@ -122,6 +123,14 @@ export default function AdminConsole({
             </svg>
             Listings
           </button>
+          <button className={"tab" + (tab === "users" ? " on" : "")} onClick={() => setTab("users")}>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" />
+            </svg>
+            Users
+          </button>
         </div>
 
         <div id="admTabBody">
@@ -135,9 +144,9 @@ export default function AdminConsole({
                 exportLeadsCSV(leads, (s) => SRC_LABEL[s as LeadSource] || s);
                 toast("Leads exported");
               }}
-              onClear={() => {
+              onClear={async () => {
                 if (confirm("Clear all captured leads? This cannot be undone.")) {
-                  clearLeads();
+                  await clearLeads();
                   toast("Leads cleared");
                 }
               }}
@@ -150,14 +159,15 @@ export default function AdminConsole({
               fmtPlain={fmtPlain}
               onAdd={() => setEditing(null)}
               onEdit={(l) => setEditing(l)}
-              onDelete={(id) => {
+              onDelete={async (id) => {
                 if (confirm("Delete this listing? This cannot be undone.")) {
-                  deleteListing(id);
-                  toast("Listing deleted");
+                  const r = await deleteListing(id);
+                  toast(r.ok ? "Listing deleted" : "Couldn’t delete listing");
                 }
               }}
             />
           )}
+          {tab === "users" && <AdminUsers />}
         </div>
 
         <div style={{ display: "flex", gap: "10px", marginTop: "18px", flexWrap: "wrap" }}>

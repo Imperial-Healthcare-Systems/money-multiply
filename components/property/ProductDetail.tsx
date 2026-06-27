@@ -31,7 +31,8 @@ const TABS = ["Overview", "Details", "Financials", "Documents", "Tokenomics", "L
 type Tab = (typeof TABS)[number];
 
 export default function ProductDetail({ id }: { id: string }) {
-  const { listings, getListing, fmt, fmtPlain, ready, captureLead } = useMarketplace();
+  const { listings, getListing, fmt, fmtPlain, ready, captureLead, currentUser, toggleSave, isSaved } =
+    useMarketplace();
   const [tab, setTab] = useState<Tab>("Overview");
   const l = getListing(id);
 
@@ -103,7 +104,21 @@ export default function ProductDetail({ id }: { id: string }) {
               <Pin />
               {l.loc}
             </span>
-            <span className={"pd-status" + (closing ? " soon" : "")}>{closing ? "Closing soon" : "Open"}</span>
+            <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              {currentUser && (
+                <button
+                  className={"pd-save" + (isSaved(l.id) ? " on" : "")}
+                  onClick={() => toggleSave(l.id)}
+                  aria-pressed={isSaved(l.id)}
+                >
+                  <svg viewBox="0 0 24 24" fill={isSaved(l.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8">
+                    <path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z" />
+                  </svg>
+                  {isSaved(l.id) ? "Saved" : "Save"}
+                </button>
+              )}
+              <span className={"pd-status" + (closing ? " soon" : "")}>{closing ? "Closing soon" : "Open"}</span>
+            </span>
           </div>
           <h1 className="pd-title">{l.title}</h1>
 

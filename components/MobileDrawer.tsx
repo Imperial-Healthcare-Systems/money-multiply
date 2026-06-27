@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 const LINKS = [
   { href: "#marketplace", label: "Marketplace" },
   { href: "#how", label: "How It Works" },
@@ -13,11 +15,13 @@ export default function MobileDrawer({
   onClose,
   onAdmin,
   onAssociate,
+  loggedIn,
 }: {
   open: boolean;
   onClose: () => void;
   onAdmin: () => void;
   onAssociate: () => void;
+  loggedIn?: boolean;
 }) {
   return (
     <div className={"drawer" + (open ? " open" : "")} id="drawer">
@@ -45,15 +49,21 @@ export default function MobileDrawer({
             {l.label} <span>→</span>
           </a>
         ))}
-        <a
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            onAssociate();
-          }}
-        >
-          Become an Associate <span>→</span>
-        </a>
+        {loggedIn ? (
+          <Link href="/dashboard" onClick={onClose}>
+            Dashboard <span>→</span>
+          </Link>
+        ) : (
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              onAssociate();
+            }}
+          >
+            Become an Associate <span>→</span>
+          </a>
+        )}
         <a
           href="#"
           onClick={(e) => {
