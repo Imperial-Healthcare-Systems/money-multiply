@@ -34,6 +34,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const user = await adminUpdateUser(id, {
       commission: typeof body?.commission === "number" ? body.commission : undefined,
       status: typeof body?.status === "string" ? body.status : undefined,
+      newPassword: typeof body?.newPassword === "string" ? body.newPassword : undefined,
     });
     return NextResponse.json({ ok: true, user });
   } catch (e) {

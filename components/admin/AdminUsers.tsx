@@ -18,6 +18,7 @@ export default function AdminUsers() {
   const [commission, setCommission] = useState("");
   const [status, setStatus] = useState("active");
   const [hold, setHold] = useState({ title: "", tokens: "", amount: "" });
+  const [newPass, setNewPass] = useState("");
 
   const loadUsers = () => {
     setLoading(true);
@@ -79,6 +80,23 @@ export default function AdminUsers() {
     if (r.ok) setDetail((p) => (p ? { ...p, holdings: p.holdings.filter((h) => h.id !== id) } : p));
   };
 
+  const setPassword = async () => {
+    if (!detail) return;
+    if (newPass.length < 6) return toast("Password must be at least 6 characters");
+    const r = await fetch(`/api/admin/users/${detail.user.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ newPassword: newPass }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (d?.ok) {
+      toast("Password reset — share it with the user");
+      setNewPass("");
+      setDetail((p) => (p ? { ...p, user: d.user } : p));
+      setUsers((prev) => prev.map((u) => (u.id === d.user.id ? d.user : u)));
+    } else toast("Couldn’t set password");
+  };
+
   /* ---- detail view ---- */
   if (detail) {
     const u = detail.user;
@@ -117,8 +135,36 @@ export default function AdminUsers() {
           </div>
           <button className="btn-mini" onClick={saveUser}>Save changes</button>
 
+          <h4 className="pd-sub">
+            Password{" "}
+            {u.resetRequested && (
+              <span className="lead-src wa" style={{ marginLeft: "8px" }}>reset requested</span>
+            )}
+          </h4>
+          <div className="au-form" style={{ gridTemplateColumns: "1fr auto" }}>
+            <div className="field" style={{ margin: 0 }}>
+              <label>Set a new password for this user</label>
+              <input type="text" value={newPass} onChange={(e) => setNewPass(e.target.value)} placeholder="Min 6 characters" />
+            </div>
+            <button className="btn-mini" onClick={setPassword}>Set password</button>
+          </div>
+
           {isPartner ? (
             <>
+              <h4 className="pd-sub">Bank details (payout)</h4>
+              {u.bank && (u.bank.accountNumber || u.bank.upi) ? (
+                <table className="pd-fin">
+                  <tbody>
+                    <tr><td>Account holder</td><td style={{ textAlign: "right" }}>{u.bank.accountName || "—"}</td></tr>
+                    <tr><td>Bank</td><td style={{ textAlign: "right" }}>{u.bank.bankName || "—"}</td></tr>
+                    <tr><td>Account number</td><td style={{ textAlign: "right" }}>{u.bank.accountNumber || "—"}</td></tr>
+                    <tr><td>IFSC</td><td style={{ textAlign: "right" }}>{u.bank.ifsc || "—"}</td></tr>
+                    <tr><td>UPI</td><td style={{ textAlign: "right" }}>{u.bank.upi || "—"}</td></tr>
+                  </tbody>
+                </table>
+              ) : (
+                <p className="db-muted">No bank details added yet.</p>
+              )}
               <h4 className="pd-sub">Referrals ({detail.referrals.length})</h4>
               {detail.referrals.length === 0 ? (
                 <p className="db-muted">Code <b>{u.referralCode}</b> — no referrals yet.</p>
@@ -185,6 +231,7 @@ export default function AdminUsers() {
             <b>{u.name || u.email}</b>
             <span>{u.email}{u.role === "partner" ? ` · ${fmt(u.commission)} commission` : ""}</span>
           </div>
+          {u.resetRequested && <span className="lead-src wa" style={{ flexShrink: 0 }}>reset</span>}
           <span className="lead-time">{u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : ""}</span>
         </button>
       ))}

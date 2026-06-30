@@ -106,7 +106,7 @@ export default function Header() {
         </div>
         <div className="navbar">
           <div className="wrap nav-in">
-            <a className="brand" href="#home" aria-label="Money Multiply home">
+            <Link className="brand" href="/" aria-label="Money Multiply home">
               <span className="mk">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={HEADER_LOGO} alt="Money Multiply emblem" />
@@ -115,7 +115,7 @@ export default function Header() {
                 <span className="b1">Money Multiply</span>
                 <span className="b2">The Land Bankers &amp; Traders</span>
               </span>
-            </a>
+            </Link>
             <nav className="links" id="links">
               {NAV.map((n) => (
                 <a key={n.href} href={n.href} className={active === n.href.slice(1) ? "on" : ""}>

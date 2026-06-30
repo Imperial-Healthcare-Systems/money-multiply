@@ -33,7 +33,7 @@ const ROLES: Record<Role, { label: string; tagline: string; icon: React.ReactNod
 };
 
 export default function AssociateModal() {
-  const { modal, closeModal, registerUser, userLogin, toast } = useMarketplace();
+  const { modal, closeModal, registerUser, userLogin, forgotPassword, toast } = useMarketplace();
   const router = useRouter();
   const open = modal.type === "associate";
 
@@ -46,11 +46,24 @@ export default function AssociateModal() {
   const [referral, setReferral] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [forgot, setForgot] = useState(false);
+  const [fEmail, setFEmail] = useState("");
+  const [fSent, setFSent] = useState(false);
 
   if (!open) return null;
 
   const reset = () => {
     setName(""); setEmail(""); setPhone(""); setPassword(""); setReferral(""); setErr("");
+    setForgot(false); setFEmail(""); setFSent(false);
+  };
+
+  const sendForgot = async () => {
+    setErr("");
+    if (!EMAIL_RE.test(fEmail.trim())) return setErr("Please enter a valid email address.");
+    setBusy(true);
+    await forgotPassword(fEmail.trim());
+    setBusy(false);
+    setFSent(true);
   };
   const pickRole = (r: Role) => { reset(); setTab("signup"); setRole(r); };
   const back = () => { reset(); setRole(null); };
@@ -149,65 +162,117 @@ export default function AssociateModal() {
             </div>
 
             <div className="mbody">
-              <div className="tabs" style={{ marginBottom: "22px" }}>
-                <button className={"tab" + (tab === "signup" ? " on" : "")} onClick={() => { setTab("signup"); setErr(""); }}>Sign up</button>
-                <button className={"tab" + (tab === "login" ? " on" : "")} onClick={() => { setTab("login"); setErr(""); }}>Login</button>
-              </div>
+              {forgot ? (
+                <div className="gate" style={{ paddingTop: 0 }}>
+                  {fSent ? (
+                    <div className="assoc-success">
+                      <span className="as-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+                          <circle cx="12" cy="12" r="9" />
+                          <path d="m8.5 12 2.5 2.5 4.5-5" />
+                        </svg>
+                      </span>
+                      <h3>Request received</h3>
+                      <p>
+                        If an account exists for <b>{fEmail}</b>, the Money Multiply team will verify
+                        it and share new credentials with you shortly.
+                      </p>
+                      <button className="btn-ghost" onClick={() => { setForgot(false); setFSent(false); setErr(""); }} style={{ width: "100%", justifyContent: "center", padding: "13px" }}>
+                        Back to login
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="field">
+                        <label>Account email</label>
+                        <input type="email" value={fEmail} onChange={(e) => setFEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" onKeyDown={(e) => e.key === "Enter" && sendForgot()} />
+                      </div>
+                      {err && (
+                        <div className="gate-err on" style={{ marginBottom: "12px" }}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16h0" /></svg>
+                          {err}
+                        </div>
+                      )}
+                      <button className={"btn-gold" + (busy ? " loading" : "")} onClick={sendForgot} disabled={busy} style={{ width: "100%", justifyContent: "center", padding: "15px" }}>
+                        Request password reset
+                      </button>
+                      <button className="gate-forgot" type="button" onClick={() => { setForgot(false); setErr(""); }}>
+                        ← Back to login
+                      </button>
+                      <p className="note" style={{ textAlign: "center" }}>
+                        No email link needed — our team verifies your request and shares new credentials.
+                      </p>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <div className="tabs" style={{ marginBottom: "22px" }}>
+                    <button className={"tab" + (tab === "signup" ? " on" : "")} onClick={() => { setTab("signup"); setErr(""); }}>Sign up</button>
+                    <button className={"tab" + (tab === "login" ? " on" : "")} onClick={() => { setTab("login"); setErr(""); }}>Login</button>
+                  </div>
 
-              {tab === "signup" && (
-                <div className="field">
-                  <label>Full name</label>
-                  <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" />
-                </div>
-              )}
-              <div className="field">
-                <label>Email</label>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" />
-              </div>
-              {tab === "signup" && (
-                <div className="field">
-                  <label>Phone / WhatsApp</label>
-                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 ..." />
-                </div>
-              )}
-              <div className="field">
-                <label>Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={tab === "signup" ? "Min 6 characters" : "Your password"}
-                  autoComplete={tab === "signup" ? "new-password" : "current-password"}
-                  onKeyDown={(e) => e.key === "Enter" && submit()}
-                />
-              </div>
-              {tab === "signup" && (
-                <div className="field">
-                  <label>Referral code (optional)</label>
-                  <input value={referral} onChange={(e) => setReferral(e.target.value)} placeholder="e.g. MM-AB12CD" />
-                </div>
-              )}
+                  {tab === "signup" && (
+                    <div className="field">
+                      <label>Full name</label>
+                      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" />
+                    </div>
+                  )}
+                  <div className="field">
+                    <label>Email</label>
+                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" />
+                  </div>
+                  {tab === "signup" && (
+                    <div className="field">
+                      <label>Phone / WhatsApp</label>
+                      <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 ..." />
+                    </div>
+                  )}
+                  <div className="field">
+                    <label>Password</label>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder={tab === "signup" ? "Min 6 characters" : "Your password"}
+                      autoComplete={tab === "signup" ? "new-password" : "current-password"}
+                      onKeyDown={(e) => e.key === "Enter" && submit()}
+                    />
+                  </div>
+                  {tab === "signup" && (
+                    <div className="field">
+                      <label>Referral code (optional)</label>
+                      <input value={referral} onChange={(e) => setReferral(e.target.value)} placeholder="e.g. MM-AB12CD" />
+                    </div>
+                  )}
 
-              {err && (
-                <div className="gate-err on" style={{ marginBottom: "12px" }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M12 8v5M12 16h0" />
-                  </svg>
-                  {err}
-                </div>
-              )}
+                  {err && (
+                    <div className="gate-err on" style={{ marginBottom: "12px" }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="M12 8v5M12 16h0" />
+                      </svg>
+                      {err}
+                    </div>
+                  )}
 
-              <button className={"btn-gold" + (busy ? " loading" : "")} onClick={submit} disabled={busy} style={{ width: "100%", justifyContent: "center", padding: "15px" }}>
-                {tab === "signup"
-                  ? role === "partner" ? "Create partner account" : "Create investor account"
-                  : "Sign in"}
-              </button>
-              <p className="note" style={{ textAlign: "center" }}>
-                {tab === "signup"
-                  ? "By creating an account you agree to be contacted by the Money Multiply team."
-                  : "Use the email & password you registered with."}
-              </p>
+                  <button className={"btn-gold" + (busy ? " loading" : "")} onClick={submit} disabled={busy} style={{ width: "100%", justifyContent: "center", padding: "15px" }}>
+                    {tab === "signup"
+                      ? role === "partner" ? "Create partner account" : "Create investor account"
+                      : "Sign in"}
+                  </button>
+                  {tab === "login" && (
+                    <button className="gate-forgot" type="button" onClick={() => { setForgot(true); setErr(""); setFEmail(email); }}>
+                      Forgot password?
+                    </button>
+                  )}
+                  <p className="note" style={{ textAlign: "center" }}>
+                    {tab === "signup"
+                      ? "By creating an account you agree to be contacted by the Money Multiply team."
+                      : "Use the email & password you registered with."}
+                  </p>
+                </>
+              )}
             </div>
           </>
         )}

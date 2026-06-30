@@ -90,3 +90,12 @@ alter table public.mm_users    enable row level security;
 alter table public.mm_users    force row level security;
 alter table public.mm_holdings enable row level security;
 alter table public.mm_holdings force row level security;
+
+-- Bank details for partners (commission payouts). Idempotent — safe on existing tables.
+alter table public.mm_users add column if not exists bank jsonb not null default '{}'::jsonb;
+
+-- Password-reset request flag (admin-assisted reset). Idempotent.
+alter table public.mm_users add column if not exists reset_requested boolean not null default false;
+
+-- User avatar image URL. Idempotent.
+alter table public.mm_users add column if not exists avatar text not null default '';

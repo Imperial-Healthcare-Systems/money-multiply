@@ -958,3 +958,12 @@ header.site .wrap{max-width:1380px}
 .au-back:hover{color:var(--brass-lt)}
 .au-form{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;margin-top:10px}
 @media(max-width:560px){.au-form{grid-template-columns:1fr 1fr}}
+
+/* editable avatar on dashboard */
+.db-av-wrap{position:relative;width:74px;margin:0 auto 14px}
+.db-av-wrap .db-av{margin:0;overflow:hidden}
+.db-av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.db-av-edit{position:absolute;bottom:-2px;right:-2px;width:28px;height:28px;border-radius:50%;background:var(--gold-grad);color:#1a1206;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--ink-2);transition:.2s}
+.db-av-edit:hover{transform:scale(1.08)}
+.db-av-edit.busy{pointer-events:none;opacity:.7}
+.db-spin{animation:spin .7s linear infinite}

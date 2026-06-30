@@ -34,6 +34,14 @@ export interface Lead {
 
 export type UserRole = "partner" | "investor";
 
+export interface BankDetails {
+  accountName?: string;
+  accountNumber?: string;
+  ifsc?: string;
+  bankName?: string;
+  upi?: string;
+}
+
 export interface AppUser {
   id: string;
   role: UserRole;
@@ -45,6 +53,9 @@ export interface AppUser {
   commission: number;
   status: string;
   saved: string[];
+  bank: BankDetails;
+  avatar: string;
+  resetRequested?: boolean;
   createdAt?: string;
 }
 

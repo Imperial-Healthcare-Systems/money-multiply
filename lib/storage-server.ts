@@ -17,12 +17,13 @@ async function ensureBucket(): Promise<void> {
 export async function uploadImage(
   buffer: Buffer,
   contentType: string,
-  ext: string
+  ext: string,
+  prefix = "listing"
 ): Promise<string> {
   await ensureBucket();
   const sb = supabaseAdmin();
   const name =
-    "listing-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + "." + ext;
+    prefix + "-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + "." + ext;
   const { error } = await sb.storage.from(BUCKET).upload(name, buffer, {
     contentType,
     upsert: false,

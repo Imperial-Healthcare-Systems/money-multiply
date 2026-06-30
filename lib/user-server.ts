@@ -2,7 +2,7 @@ import "server-only";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { supabaseAdmin } from "./supabase-admin";
-import type { AppUser, Holding, UserRole } from "./types";
+import type { AppUser, BankDetails, Holding, UserRole } from "./types";
 
 const USERS = "mm_users";
 const HOLDINGS = "mm_holdings";
@@ -57,6 +57,9 @@ function rowToUser(r: any): AppUser {
     commission: Number(r.commission) || 0,
     status: r.status || "active",
     saved: Array.isArray(r.saved) ? r.saved : [],
+    bank: r.bank && typeof r.bank === "object" ? r.bank : {},
+    avatar: r.avatar || "",
+    resetRequested: !!r.reset_requested,
     createdAt: r.created_at,
   };
 }
@@ -124,13 +127,30 @@ export async function getUserById(id: string): Promise<AppUser | null> {
   return data ? rowToUser(data) : null;
 }
 
-export async function updateProfile(id: string, patch: { name?: string; phone?: string }): Promise<AppUser> {
+export async function updateProfile(
+  id: string,
+  patch: { name?: string; phone?: string; avatar?: string }
+): Promise<AppUser> {
   const upd: any = {};
   if (typeof patch.name === "string") upd.name = patch.name.trim();
   if (typeof patch.phone === "string") upd.phone = patch.phone.trim();
+  if (typeof patch.avatar === "string") upd.avatar = patch.avatar;
   const { data, error } = await sb().from(USERS).update(upd).eq("id", id).select().single();
   if (error) fail(error);
   return rowToUser(data);
+}
+
+export async function updateBank(id: string, bank: BankDetails): Promise<BankDetails> {
+  const clean: BankDetails = {
+    accountName: String(bank.accountName || "").slice(0, 120),
+    accountNumber: String(bank.accountNumber || "").slice(0, 40),
+    ifsc: String(bank.ifsc || "").slice(0, 20),
+    bankName: String(bank.bankName || "").slice(0, 120),
+    upi: String(bank.upi || "").slice(0, 80),
+  };
+  const { error } = await sb().from(USERS).update({ bank: clean }).eq("id", id);
+  if (error) fail(error);
+  return clean;
 }
 
 export async function toggleSaved(id: string, listingId: string): Promise<string[]> {
@@ -166,13 +186,25 @@ export async function listUsers(): Promise<AppUser[]> {
   return (data || []).map(rowToUser);
 }
 
-export async function adminUpdateUser(id: string, patch: { commission?: number; status?: string }): Promise<AppUser> {
+export async function adminUpdateUser(
+  id: string,
+  patch: { commission?: number; status?: string; newPassword?: string }
+): Promise<AppUser> {
   const upd: any = {};
   if (typeof patch.commission === "number") upd.commission = Math.round(patch.commission);
   if (typeof patch.status === "string") upd.status = patch.status;
+  if (typeof patch.newPassword === "string" && patch.newPassword.length >= 6) {
+    upd.password_hash = await bcrypt.hash(patch.newPassword, ROUNDS);
+    upd.reset_requested = false;
+  }
   const { data, error } = await sb().from(USERS).update(upd).eq("id", id).select().single();
   if (error) fail(error);
   return rowToUser(data);
+}
+
+/** Flag an account for admin-assisted password reset. Never reveals existence. */
+export async function requestReset(email: string): Promise<void> {
+  await sb().from(USERS).update({ reset_requested: true }).eq("email", email.trim().toLowerCase());
 }
 
 export async function addHolding(input: {

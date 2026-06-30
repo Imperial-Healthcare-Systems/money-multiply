@@ -35,7 +35,7 @@
   },
   {
     "id": "mm-omkar-student-housing",
-    "title": "Omkar — Student Housing Complex",
+    "title": "Omkaram — Student Housing Complex",
     "cat": "Co-Living",
     "loc": "Yamuna Expressway, Greater Noida (Near Galgotias University)",
     "img": 2,
@@ -48,7 +48,7 @@
     "size": "G+7 · 150 studios · 300 beds",
     "tag": "High Yield",
     "desc": "A G+7 luxury student-housing complex on the Yamuna Expressway, minutes from Galgotias University and Greater Noida’s largest campus cluster. 150 studio suites / 300 premium beds on a 1,000 sq.m parcel, with capital split 50/50 between land acquisition and high-grade civil construction. A per-bed annual rental model targets a ~18.75% gross yield on capital, fully asset-backed by appreciating Yamuna Expressway land. Minimum ticket ₹5,00,000.",
-    "photo": "/images/omkar.jpg"
+    "photo": "/images/namaskaram.jpg"
   },
   {
     "id": "mm-namaskaram-hostel",
@@ -65,7 +65,7 @@
     "size": "G+7 · 150 studios · 300 beds",
     "tag": "New",
     "desc": "A G+7 luxury unisex hostel in Dehradun — one of Uttarakhand’s largest student and education hubs. 150 studio suites / 300 premium beds on a 1,000 sq.m parcel, with capital split 50/50 between land acquisition and high-grade civil construction. A per-bed annual rental model targets a ~18.75% gross yield on capital, fully asset-backed by appreciating Dehradun land. Minimum ticket ₹5,00,000.",
-    "photo": "/images/namaskaram.jpg"
+    "photo": "/images/omkar.jpg"
   },
   {
     "id": "mm-swastikam-cottages",

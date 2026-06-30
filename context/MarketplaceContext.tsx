@@ -9,7 +9,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import type { AppUser, Currency, Lead, LeadSource, Listing } from "@/lib/types";
+import type { AppUser, BankDetails, Currency, Lead, LeadSource, Listing } from "@/lib/types";
 import { SEED, PHOTO_POOL, IMG } from "@/lib/data";
 import { fmt as fmtRaw, fmtPlain as fmtPlainRaw } from "@/lib/currency";
 
@@ -50,9 +50,13 @@ interface MarketplaceCtx {
     referredBy?: string;
   }) => Promise<{ ok: boolean; error?: string }>;
   userLogin: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  forgotPassword: (email: string) => Promise<{ ok: boolean; error?: string }>;
   userLogout: () => Promise<void>;
   toggleSave: (listingId: string) => Promise<void>;
   isSaved: (listingId: string) => boolean;
+  updateBank: (bank: BankDetails) => Promise<{ ok: boolean }>;
+  saveProfile: (name: string, phone: string) => Promise<{ ok: boolean; error?: string }>;
+  uploadAvatar: (file: File) => Promise<{ ok: boolean; error?: string }>;
   // modals
   modal: ModalState;
   openInvest: (id: string) => void;
@@ -282,6 +286,21 @@ export function MarketplaceProvider({
     }
   }, []);
 
+  const forgotPassword = useCallback(async (email: string) => {
+    try {
+      const r = await fetch("/api/user/forgot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.ok) return { ok: true };
+      return { ok: false, error: d.error || "server" };
+    } catch {
+      return { ok: false, error: "network" };
+    }
+  }, []);
+
   const userLogout = useCallback(async () => {
     try {
       await fetch("/api/user/logout", { method: "POST" });
@@ -307,6 +326,58 @@ export function MarketplaceProvider({
     (listingId: string) => !!currentUser?.saved?.includes(listingId),
     [currentUser]
   );
+
+  const saveProfile = useCallback(async (name: string, phone: string) => {
+    try {
+      const r = await fetch("/api/user/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, phone }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.ok) {
+        setCurrentUser(d.user as AppUser);
+        return { ok: true };
+      }
+      return { ok: false, error: d.error || "server" };
+    } catch {
+      return { ok: false, error: "network" };
+    }
+  }, []);
+
+  const uploadAvatar = useCallback(async (file: File) => {
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const r = await fetch("/api/user/avatar", { method: "POST", body: fd });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.ok) {
+        setCurrentUser(d.user as AppUser);
+        return { ok: true };
+      }
+      return { ok: false, error: d.error || "server" };
+    } catch {
+      return { ok: false, error: "network" };
+    }
+  }, []);
+
+  const updateBank = useCallback(async (bank: BankDetails) => {
+    try {
+      const r = await fetch("/api/user/bank", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bank),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.ok) {
+        setCurrentUser((u) => (u ? { ...u, bank: d.bank as BankDetails } : u));
+        return { ok: true };
+      }
+      return { ok: false };
+    } catch {
+      return { ok: false };
+    }
+  }, []);
 
   /* ---- modals ---- */
   const openInvest = useCallback((id: string) => setModal({ type: "invest", listingId: id }), []);
@@ -342,9 +413,13 @@ export function MarketplaceProvider({
       userReady,
       registerUser,
       userLogin,
+      forgotPassword,
       userLogout,
       toggleSave,
       isSaved,
+      updateBank,
+      saveProfile,
+      uploadAvatar,
       modal,
       openInvest,
       openAdmin,
@@ -373,9 +448,13 @@ export function MarketplaceProvider({
       userReady,
       registerUser,
       userLogin,
+      forgotPassword,
       userLogout,
       toggleSave,
       isSaved,
+      updateBank,
+      saveProfile,
+      uploadAvatar,
       modal,
       openInvest,
       openAdmin,

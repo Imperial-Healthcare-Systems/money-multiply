@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useMarketplace } from "@/context/MarketplaceContext";
 import ListingCard from "@/components/ListingCard";
-import type { Holding } from "@/lib/types";
+import type { BankDetails, Holding } from "@/lib/types";
 
 interface Referral {
   name: string;
@@ -14,12 +14,21 @@ interface Referral {
 }
 
 export default function DashboardClient() {
-  const { currentUser, userReady, userLogout, listings, fmt, openAssociate, toast } = useMarketplace();
+  const { currentUser, userReady, userLogout, listings, fmt, openAssociate, toast, updateBank, saveProfile, uploadAvatar } =
+    useMarketplace();
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [referrals, setReferrals] = useState<Referral[]>([]);
+  const [bank, setBank] = useState<BankDetails>({});
+  const [bankSaving, setBankSaving] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [eName, setEName] = useState("");
+  const [ePhone, setEPhone] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [avatarBusy, setAvatarBusy] = useState(false);
 
   useEffect(() => {
     if (!currentUser) return;
+    if (currentUser.bank) setBank(currentUser.bank);
     fetch("/api/user/me")
       .then((r) => r.json())
       .then((d) => {
@@ -30,6 +39,15 @@ export default function DashboardClient() {
       })
       .catch(() => {});
   }, [currentUser?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const saveBank = async () => {
+    setBankSaving(true);
+    const r = await updateBank(bank);
+    setBankSaving(false);
+    toast(r.ok ? "Bank details saved" : "Couldn’t save bank details");
+  };
+  const setB = (k: keyof BankDetails) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setBank((b) => ({ ...b, [k]: e.target.value }));
 
   /* ---- gates ---- */
   if (!userReady) {
@@ -75,6 +93,31 @@ export default function DashboardClient() {
     }
   };
 
+  const startEdit = () => {
+    setEName(u.name);
+    setEPhone(u.phone);
+    setEditing(true);
+  };
+  const saveProf = async () => {
+    if (!eName.trim()) return toast("Name can’t be empty");
+    setSavingProfile(true);
+    const r = await saveProfile(eName.trim(), ePhone.trim());
+    setSavingProfile(false);
+    if (r.ok) {
+      toast("Profile updated");
+      setEditing(false);
+    } else toast("Couldn’t save profile");
+  };
+  const onAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) return toast("Image too large (max 5MB)");
+    setAvatarBusy(true);
+    const r = await uploadAvatar(file);
+    setAvatarBusy(false);
+    toast(r.ok ? "Photo updated" : "Couldn’t upload photo");
+  };
+
   return (
     <section className="db-wrap">
       <div className="wrap">
@@ -92,15 +135,59 @@ export default function DashboardClient() {
         <div className="db-grid">
           {/* left: profile */}
           <aside className="db-card db-profile">
-            <div className="db-av">{(u.name || u.email)[0]?.toUpperCase()}</div>
-            <div className="db-name">{u.name || "—"}</div>
+            <div className="db-av-wrap">
+              <div className="db-av">
+                {u.avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={u.avatar} alt={u.name} />
+                ) : (
+                  (u.name || u.email)[0]?.toUpperCase()
+                )}
+              </div>
+              <label className={"db-av-edit" + (avatarBusy ? " busy" : "")} title="Change photo">
+                {avatarBusy ? (
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" className="db-spin"><path d="M21 12a9 9 0 1 1-6.2-8.5" /></svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z" /><circle cx="12" cy="13" r="4" /></svg>
+                )}
+                <input type="file" accept="image/*" hidden onChange={onAvatar} disabled={avatarBusy} />
+              </label>
+            </div>
+
+            {editing ? (
+              <div className="field" style={{ margin: "0 0 4px" }}>
+                <input value={eName} onChange={(e) => setEName(e.target.value)} placeholder="Full name" style={{ textAlign: "center" }} />
+              </div>
+            ) : (
+              <div className="db-name">{u.name || "—"}</div>
+            )}
             <span className="db-role">{isPartner ? "Official Partner" : "Investor"}</span>
+
             <div className="db-rows">
               <div className="db-row"><span>Email</span><b>{u.email}</b></div>
-              <div className="db-row"><span>Phone</span><b>{u.phone || "—"}</b></div>
+              <div className="db-row">
+                <span>Phone</span>
+                {editing ? (
+                  <input value={ePhone} onChange={(e) => setEPhone(e.target.value)} placeholder="Phone" style={{ maxWidth: "150px", padding: "6px 10px", borderRadius: "8px", border: "1px solid var(--line-2)", background: "rgba(0,0,0,.3)", color: "var(--cream)", fontFamily: "var(--ff-m)", fontSize: "13px" }} />
+                ) : (
+                  <b>{u.phone || "—"}</b>
+                )}
+              </div>
               <div className="db-row"><span>Status</span><b style={{ textTransform: "capitalize" }}>{u.status}</b></div>
               <div className="db-row"><span>Member since</span><b>{memberSince}</b></div>
             </div>
+
+            {editing ? (
+              <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+                <button className={"btn-gold" + (savingProfile ? " loading" : "")} onClick={saveProf} disabled={savingProfile} style={{ flex: 1, justifyContent: "center", padding: "11px" }}>Save</button>
+                <button className="btn-ghost" onClick={() => setEditing(false)} style={{ flex: 1, justifyContent: "center", padding: "11px" }}>Cancel</button>
+              </div>
+            ) : (
+              <button className="btn-ghost" onClick={startEdit} style={{ width: "100%", justifyContent: "center", marginTop: "16px", padding: "11px" }}>
+                Edit profile
+              </button>
+            )}
+
             {isPartner && u.referralCode && (
               <div className="db-ref">
                 <div className="db-ref-l">Your referral code</div>
@@ -141,6 +228,25 @@ export default function DashboardClient() {
                       </tbody>
                     </table>
                   )}
+                </div>
+                <div className="db-card">
+                  <h3 className="db-h3">Bank details</h3>
+                  <p className="db-muted" style={{ marginBottom: "16px" }}>
+                    Where we send your commission payouts. Stored securely; only you and the Money
+                    Multiply team can see this.
+                  </p>
+                  <div className="frow">
+                    <div className="field"><label>Account holder name</label><input value={bank.accountName || ""} onChange={setB("accountName")} placeholder="As per bank records" /></div>
+                    <div className="field"><label>Bank name</label><input value={bank.bankName || ""} onChange={setB("bankName")} placeholder="e.g. HDFC Bank" /></div>
+                  </div>
+                  <div className="frow">
+                    <div className="field"><label>Account number</label><input value={bank.accountNumber || ""} onChange={setB("accountNumber")} placeholder="Account number" /></div>
+                    <div className="field"><label>IFSC code</label><input value={bank.ifsc || ""} onChange={setB("ifsc")} placeholder="e.g. HDFC0001234" /></div>
+                  </div>
+                  <div className="field"><label>UPI ID (optional)</label><input value={bank.upi || ""} onChange={setB("upi")} placeholder="name@upi" /></div>
+                  <button className={"btn-gold" + (bankSaving ? " loading" : "")} onClick={saveBank} disabled={bankSaving} style={{ padding: "12px 22px" }}>
+                    Save bank details
+                  </button>
                 </div>
               </>
             ) : (
